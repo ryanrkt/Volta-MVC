@@ -8,8 +8,7 @@ import volta.utils.PackageScanner;
 public class Main {
     public static void main(String[] args) throws ClassNotFoundException, IOException {
        ;
-        String packageName = "volta.annotations";
-        List<Class<?>> classes = PackageScanner.getClassesInPackage(packageName);
+        List<Class<?>> classes = PackageScanner.getAllClasses();
         for(Class<?> c : classes){
             System.out.println(c.getName());
         }
