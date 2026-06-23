@@ -9,6 +9,24 @@ import java.util.List;
 
 public class PackageScanner {
 
+    public static List<Class<?>> getAllClasses() throws ClassNotFoundException, IOException {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    
+        Enumeration<URL> resources = classLoader.getResources("");
+        List<File> dirs = new ArrayList<>();
+
+        while (resources.hasMoreElements()) {
+            URL resource = resources.nextElement();
+            dirs.add(new File(resource.getFile()));
+        }
+
+        List<Class<?>> classes = new ArrayList<>();
+        for (File directory : dirs) {
+            classes.addAll(findClasses(directory, ""));
+        }
+        return classes;
+    }
+
     public static List<Class<?>> getClassesInPackage(String packageName) throws ClassNotFoundException, IOException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         String path = packageName.replace('.', '/');
@@ -37,9 +55,18 @@ public class PackageScanner {
         if (files != null) {
             for (File file : files) {
                 if (file.isDirectory()) {
-                    classes.addAll(findClasses(file, packageName + "." + file.getName()));
+                    String nextPackageName = packageName.isEmpty() ? file.getName() : packageName + "." + file.getName();
+                    classes.addAll(findClasses(file, nextPackageName));
                 } else if (file.getName().endsWith(".class")) {
-                    String className = packageName + '.' + file.getName().substring(0, file.getName().length() - 6);
+                    String simpleClassName = file.getName().substring(0, file.getName().length() - 6);
+                    
+                    String className = packageName.isEmpty() ? simpleClassName : packageName + '.' + simpleClassName;
+                    
+                    className = className.replace('/', '.').replace('\\', '.');
+                    if (className.startsWith(".")) {
+                        className = className.substring(1);
+                    }
+                    
                     classes.add(Class.forName(className));
                 }
             }
