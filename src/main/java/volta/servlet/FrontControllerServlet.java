@@ -2,6 +2,7 @@ package volta.servlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
@@ -36,16 +37,26 @@ public class FrontControllerServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+        try {
+            processRequest(request, response);
+        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
+                | NoSuchMethodException | SecurityException | IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+        try {
+            processRequest(request, response);
+        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
+                | NoSuchMethodException | SecurityException | IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void processRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void processRequest(HttpServletRequest request, HttpServletResponse response) throws IOException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
         response.setContentType("text/html;charset=UTF-8");
         PrintWriter out = response.getWriter();
 
@@ -76,6 +87,14 @@ public class FrontControllerServlet extends HttpServlet {
             out.println("<p><strong>Classe :</strong> " + route.getClazz().getName() + "</p>");
             out.println("<p><strong>Annotation :</strong> @" + mapping.annotationType().getSimpleName() + "(\""
                     + mapping.value() + "\")</p>");
+
+            Class<?> clazz = route.getClazz();
+
+            Object instance = clazz.getDeclaredConstructor().newInstance();
+
+            targetMethod.invoke(instance);
+            
+
 
         } catch (UrlNotFoundException e) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
