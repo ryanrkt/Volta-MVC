@@ -8,47 +8,55 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import volta.exceptions.DuplicateUrlAndMethodException;
 import volta.models.RouteMapping;
-
-
-
+import volta.models.UrlMethodeHttpMapping;
 
 public class AnnotationScanner {
 
-    public static Map<String, RouteMapping> getUrlMethodeMappings(Map<Class<?>, List<Method>> methodeMappings, Class<? extends Annotation> annotationClass) {
-        Map<String, RouteMapping> urlMap = new HashMap<>();
-        
-        if (methodeMappings == null || annotationClass == null) {
-            return urlMap;
+    public static void getUrlMethodeMappings(
+            Map<UrlMethodeHttpMapping, RouteMapping> urlMap, Class<? extends Annotation> annotationClass)
+            throws Exception {
+
+        if (urlMap == null || annotationClass == null) {
+            return;
+        }
+
+        Map<Class<?>, List<Method>> methodeMappings = getAnnotatedMethodsPerClass(annotationClass);
+
+        if (methodeMappings == null) {
+            return;
         }
 
         for (Map.Entry<Class<?>, List<Method>> entry : methodeMappings.entrySet()) {
-            Class<?> clazz = entry.getKey(); 
-            List<Method> methods = entry.getValue();
-
-            for (Method method : methods) {
+            Class<?> clazz = entry.getKey();
+            for (Method method : entry.getValue()) {
                 Annotation annotation = method.getAnnotation(annotationClass);
-                
+
                 if (annotation != null) {
-                    try {
-                        Method valueMethod = annotation.annotationType().getMethod("value");
-                        String url = (String) valueMethod.invoke(annotation);
-                        
-                        RouteMapping route = new RouteMapping();
-                        route.setClazz(clazz);
-                        route.setMethode(method);
-            
-                        urlMap.put(url, route);
-                        
-                    } catch (Exception e) {
-                        System.err.println("L'annotation " + annotationClass.getSimpleName() + " n'a pas d'attribut 'value()'.");
+                    String url = (String) annotation.annotationType().getMethod("value").invoke(annotation);
+                    volta.enums.MethodHttp httpMethod = (volta.enums.MethodHttp) annotation.annotationType()
+                            .getMethod("methodHttp").invoke(annotation);
+
+                    UrlMethodeHttpMapping key = new UrlMethodeHttpMapping();
+                    key.setUrl(url);
+                    key.setMethode(httpMethod);
+
+                    if (urlMap.containsKey(key)) {
+                        RouteMapping existingRoute = urlMap.get(key);
+                        throw new DuplicateUrlAndMethodException(key, existingRoute, clazz, method.getName());
                     }
+
+                    RouteMapping route = new RouteMapping();
+                    route.setClazz(clazz);
+                    route.setMethode(method);
+
+                    urlMap.put(key, route);
                 }
             }
         }
-        
-        return urlMap;
     }
+
     public static Map<Class<?>, List<Method>> getAnnotatedMethodsPerClass(Class<? extends Annotation> annotationClass)
             throws ClassNotFoundException, IOException {
 

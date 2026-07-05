@@ -3,7 +3,7 @@ package volta.servlet;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,21 +12,24 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import volta.annotations.UrlMapping;
+import volta.enums.MethodHttp;
+import volta.exceptions.DuplicateUrlAndMethodException;
 import volta.exceptions.UrlNotFoundException;
 import volta.models.RouteMapping;
+import volta.models.UrlMethodeHttpMapping;
 import volta.utils.AnnotationScanner;
 
 public class FrontControllerServlet extends HttpServlet {
 
-    private Map<String,RouteMapping> urlMapping;
+    private Map<UrlMethodeHttpMapping, RouteMapping> urlMapping;
 
     @Override
-    public void init() {
+    public void init() throws ServletException {
+        this.urlMapping = new HashMap<>();
         try {
-            Map<Class<?>, List<Method>> initialScan = AnnotationScanner.getAnnotatedMethodsPerClass(UrlMapping.class);
-            urlMapping = AnnotationScanner.getUrlMethodeMappings(initialScan, UrlMapping.class);
+            AnnotationScanner.getUrlMethodeMappings(this.urlMapping, UrlMapping.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new ServletException("Echec lors de l'initialisation des routes: " + e.getMessage(), e);
         }
     }
 
@@ -42,7 +45,7 @@ public class FrontControllerServlet extends HttpServlet {
         processRequest(request, response);
     }
 
-   public void processRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void processRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("text/html;charset=UTF-8");
         PrintWriter out = response.getWriter();
 
@@ -50,20 +53,29 @@ public class FrontControllerServlet extends HttpServlet {
         String requestURI = request.getRequestURI();
         String pathTarget = requestURI.substring(contextPath.length());
 
+        String httpMethodStr = request.getMethod();
+        MethodHttp currentHttpMethod = MethodHttp.valueOf(httpMethodStr);
+
+        UrlMethodeHttpMapping searchKey = new UrlMethodeHttpMapping();
+        searchKey.setUrl(pathTarget);
+        searchKey.setMethode(currentHttpMethod);
+
         try {
-            if (urlMapping == null || !urlMapping.containsKey(pathTarget)) {
+            if (urlMapping == null || !urlMapping.containsKey(searchKey)) {
                 throw new UrlNotFoundException(pathTarget, urlMapping);
             }
 
-            RouteMapping route = urlMapping.get(pathTarget);
+            RouteMapping route = urlMapping.get(searchKey);
             Method targetMethod = route.getMethode();
             UrlMapping mapping = targetMethod.getAnnotation(UrlMapping.class);
 
             out.println("<h1>URL trouvee !</h1>");
             out.println("<p><strong>URL :</strong> " + pathTarget + "</p>");
-            out.println("<p><strong>Methode :</strong> " + targetMethod.getName() + "()</p>");
-            out.println("<p><strong>Classe :</strong> " + route.getClazz().getName() + "</p>"); 
-            out.println("<p><strong>Annotation :</strong> @" + mapping.annotationType().getSimpleName() + "(\"" + mapping.value() + "\")</p>");
+            out.println("<p><strong>Methode HTTP :</strong> " + currentHttpMethod + "</p>");
+            out.println("<p><strong>Methode Java :</strong> " + targetMethod.getName() + "()</p>");
+            out.println("<p><strong>Classe :</strong> " + route.getClazz().getName() + "</p>");
+            out.println("<p><strong>Annotation :</strong> @" + mapping.annotationType().getSimpleName() + "(\""
+                    + mapping.value() + "\")</p>");
 
         } catch (UrlNotFoundException e) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
