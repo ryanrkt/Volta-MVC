@@ -15,9 +15,6 @@ CYAN='\033[0;36m'
 JAR_SOURCE="jar/volta-mvc.jar"
 TARGET_DIR="../Test-Volta/lib"
 
-echo -e "${CYAN}==================================================${NC}"
-echo -e "${CYAN}    Début du processus global de mise à jour${NC}"
-echo -e "${CYAN}==================================================${NC}"
 
 # 1. Exécution du build du Framework
 if [ -f "./build-jar.sh" ]; then
