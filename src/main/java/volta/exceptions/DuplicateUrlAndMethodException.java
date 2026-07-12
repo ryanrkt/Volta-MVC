@@ -1,15 +1,15 @@
 package volta.exceptions;
 
 import volta.models.UrlMethodeHttpMapping;
-import volta.models.RouteMapping;
+import volta.models.MethodControllerMapping;
 
 public class DuplicateUrlAndMethodException extends Exception {
 
-    public DuplicateUrlAndMethodException(UrlMethodeHttpMapping duplicateKey, RouteMapping existingRoute, Class<?> newClass, String newMethodName) {
+    public DuplicateUrlAndMethodException(UrlMethodeHttpMapping duplicateKey, MethodControllerMapping existingRoute, Class<?> newClass, String newMethodName) {
         super(genererMessage(duplicateKey, existingRoute, newClass, newMethodName));
     }
 
-    private static String genererMessage(UrlMethodeHttpMapping key, RouteMapping existing, Class<?> newClass, String newMethodName) {
+    private static String genererMessage(UrlMethodeHttpMapping key, MethodControllerMapping existing, Class<?> newClass, String newMethodName) {
         StringBuilder sb = new StringBuilder();
         sb.append("Doublon détecté: \n")
           .append("La route [").append(key.getMethode()).append("] '").append(key.getUrl()).append("' est déjà enregistrée.\n\n")
