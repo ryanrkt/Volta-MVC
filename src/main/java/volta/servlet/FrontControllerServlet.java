@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import jakarta.servlet.ServletException;
@@ -13,25 +11,18 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import volta.annotations.UrlMapping;
-import volta.enums.MethodHttp;
-import volta.exceptions.DuplicateUrlAndMethodException;
 import volta.exceptions.UrlNotFoundException;
-import volta.models.RouteMapping;
+import volta.models.MethodControllerMapping;
 import volta.models.UrlMethodeHttpMapping;
-import volta.utils.AnnotationScanner;
 
 public class FrontControllerServlet extends HttpServlet {
 
-    private Map<UrlMethodeHttpMapping, RouteMapping> urlMapping;
+    private Map<UrlMethodeHttpMapping, MethodControllerMapping> urlMapping;
 
     @Override
     public void init() throws ServletException {
-        this.urlMapping = new HashMap<>();
-        try {
-            AnnotationScanner.getUrlMethodeMappings(this.urlMapping, UrlMapping.class);
-        } catch (Exception e) {
-            throw new ServletException("Echec lors de l'initialisation des routes: " + e.getMessage(), e);
-        }
+        urlMapping= (Map<UrlMethodeHttpMapping, MethodControllerMapping>) this.getServletContext().getAttribute("urlMapping");
+        
     }
 
     @Override
@@ -39,8 +30,7 @@ public class FrontControllerServlet extends HttpServlet {
             throws ServletException, IOException {
         try {
             processRequest(request, response);
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
-                | NoSuchMethodException | SecurityException | IOException e) {
+        } catch (IllegalArgumentException | SecurityException | IOException e) {
             e.printStackTrace();
         }
     }
@@ -50,60 +40,86 @@ public class FrontControllerServlet extends HttpServlet {
             throws ServletException, IOException {
         try {
             processRequest(request, response);
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
-                | NoSuchMethodException | SecurityException | IOException e) {
+        } catch (IllegalArgumentException | SecurityException | IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void processRequest(HttpServletRequest request, HttpServletResponse response) throws IOException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
-        response.setContentType("text/html;charset=UTF-8");
-        PrintWriter out = response.getWriter();
-
+    public void processRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String contextPath = request.getContextPath();
         String requestURI = request.getRequestURI();
         String pathTarget = requestURI.substring(contextPath.length());
 
-        String httpMethodStr = request.getMethod();
-        MethodHttp currentHttpMethod = MethodHttp.valueOf(httpMethodStr);
-
-        UrlMethodeHttpMapping searchKey = new UrlMethodeHttpMapping();
-        searchKey.setUrl(pathTarget);
-        searchKey.setMethode(currentHttpMethod);
+        informationUrl(pathTarget, response);
 
         try {
-            if (urlMapping == null || !urlMapping.containsKey(searchKey)) {
-                throw new UrlNotFoundException(pathTarget, urlMapping);
-            }
+            executeUrl(pathTarget);
+        } catch (UrlNotFoundException e) {
+            System.err.println("[Volta-MVC] Erreur d'exécution : " + e.getMessage());
+        }
+    }
 
-            RouteMapping route = urlMapping.get(searchKey);
+  
+    public void informationUrl(String pathTarget, HttpServletResponse response) throws IOException {
+        response.setContentType("text/html;charset=UTF-8");
+        PrintWriter out = response.getWriter();
+
+        UrlMethodeHttpMapping foundKey = chercherCleParUrl(pathTarget);
+
+        if (foundKey != null) {
+            MethodControllerMapping route = urlMapping.get(foundKey);
             Method targetMethod = route.getMethode();
             UrlMapping mapping = targetMethod.getAnnotation(UrlMapping.class);
 
             out.println("<h1>URL trouvee !</h1>");
-            out.println("<p><strong>URL :</strong> " + pathTarget + "</p>");
-            out.println("<p><strong>Methode HTTP :</strong> " + currentHttpMethod + "</p>");
-            out.println("<p><strong>Methode Java :</strong> " + targetMethod.getName() + "()</p>");
+            out.println("<p><strong>URL appelée :</strong> " + pathTarget + "</p>");
+            out.println("<p><strong>Methode  exécutée :</strong> " + targetMethod.getName() + "()</p>");
             out.println("<p><strong>Classe :</strong> " + route.getClazz().getName() + "</p>");
-            out.println("<p><strong>Annotation :</strong> @" + mapping.annotationType().getSimpleName() + "(\""
-                    + mapping.value() + "\")</p>");
-
-            Class<?> clazz = route.getClazz();
-
-            Object instance = clazz.getDeclaredConstructor().newInstance();
-
-            targetMethod.invoke(instance);
             
-
-
-        } catch (UrlNotFoundException e) {
+            try {
+                Method valueMethod = mapping.annotationType().getMethod("value");
+                out.println("<p><strong>Annotation :</strong> @" + mapping.annotationType().getSimpleName() + "(\"" + valueMethod.invoke(mapping) + "\")</p>");
+            } catch (Exception e) {
+                out.println("<p><strong>Annotation :</strong> @" + mapping.annotationType().getSimpleName() + "</p>");
+            }
+        } else {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             out.println("<h1>Erreur : UrlNotFoundException</h1>");
-            out.println("<pre>");
-            out.println(e.getMessage());
-            out.println("</pre>");
-        } finally {
-            out.close();
+            out.println("<pre>L'URL : '" + pathTarget + "' n'existe pas dans l'application.</pre>");
         }
+    }
+
+ 
+    public void executeUrl(String pathTarget) throws UrlNotFoundException {
+        UrlMethodeHttpMapping foundKey = chercherCleParUrl(pathTarget);
+
+        if (foundKey == null) {
+            throw new UrlNotFoundException(pathTarget, urlMapping);
+        }
+
+        try {
+            MethodControllerMapping route = urlMapping.get(foundKey);
+            Method targetMethod = route.getMethode();
+
+            Object controllerInstance = route.getClazz().getDeclaredConstructor().newInstance();
+            targetMethod.invoke(controllerInstance);
+            System.out.println("[Volta-MVC] Invocation réussie : " + route.getClazz().getSimpleName() + "." + targetMethod.getName() + "()");
+
+        } catch (Exception e) {
+            System.err.println("[Volta-MVC] Erreur lors de l'invocation de la méthode : " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+   
+    private UrlMethodeHttpMapping chercherCleParUrl(String url) {
+        if (urlMapping != null) {
+            for (UrlMethodeHttpMapping key : urlMapping.keySet()) {
+                if (key.getUrl().equals(url)) {
+                    return key;
+                }
+            }
+        }
+        return null;
     }
 }

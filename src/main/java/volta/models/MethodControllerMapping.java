@@ -2,7 +2,7 @@ package volta.models;
 
 import java.lang.reflect.Method;
 
-public class RouteMapping {
+public class MethodControllerMapping {
     private Class<?> clazz;
     private Method methode;
 
