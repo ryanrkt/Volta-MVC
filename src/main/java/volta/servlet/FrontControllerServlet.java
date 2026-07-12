@@ -2,6 +2,7 @@ package volta.servlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -27,13 +28,21 @@ public class FrontControllerServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+        try {
+            processRequest(request, response);
+        } catch (IllegalArgumentException | SecurityException | IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+        try {
+            processRequest(request, response);
+        } catch (IllegalArgumentException | SecurityException | IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void processRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
