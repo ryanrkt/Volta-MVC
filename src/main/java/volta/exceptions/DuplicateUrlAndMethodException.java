@@ -1,7 +1,7 @@
 package volta.exceptions;
 
-import volta.models.UrlMethodeHttpMapping;
-import volta.models.MethodControllerMapping;
+import volta.core.UrlMethodeHttpMapping;
+import volta.core.MethodControllerMapping;
 
 public class DuplicateUrlAndMethodException extends Exception {
 

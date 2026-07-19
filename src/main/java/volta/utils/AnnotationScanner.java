@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 import volta.exceptions.DuplicateUrlAndMethodException;
-import volta.models.MethodControllerMapping;
-import volta.models.UrlMethodeHttpMapping;
+import volta.core.MethodControllerMapping;
+import volta.core.UrlMethodeHttpMapping;
 import volta.enums.MethodHttp;
 
 public class AnnotationScanner {
