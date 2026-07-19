@@ -1,4 +1,4 @@
-package volta.models;
+package volta.core;
 
 import java.lang.reflect.Method;
 

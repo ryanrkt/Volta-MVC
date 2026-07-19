@@ -1,8 +1,8 @@
 package volta.exceptions;
 
 import java.util.Map;
-import volta.models.MethodControllerMapping;
-import volta.models.UrlMethodeHttpMapping;
+import volta.core.MethodControllerMapping;
+import volta.core.UrlMethodeHttpMapping;
 
 public class UrlNotFoundException extends Exception {
     

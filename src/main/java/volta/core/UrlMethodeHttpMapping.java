@@ -1,4 +1,4 @@
-package volta.models;
+package volta.core;
 
 import java.util.Objects;
 import volta.enums.MethodHttp;
@@ -6,6 +6,15 @@ import volta.enums.MethodHttp;
 public class UrlMethodeHttpMapping {
     private String url;
     private MethodHttp methode;
+
+    public UrlMethodeHttpMapping(String url,MethodHttp methodHttp){
+        this.url=url;
+        this.methode= methodHttp;
+    }
+
+    public UrlMethodeHttpMapping(){
+        
+    }
 
     public String getUrl() {
         return url;
