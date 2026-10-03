@@ -5,8 +5,16 @@ import java.lang.reflect.Method;
 public class MethodControllerMapping {
     private Class<?> clazz;
     private Method methode;
+    private Boolean isApiRest;
 
     
+   
+    public Boolean getIsApiRest() {
+        return isApiRest;
+    }
+    public void setIsApiRest(Boolean isApiRest) {
+        this.isApiRest = isApiRest;
+    }
     public Class<?> getClazz() {
         return clazz;
     }

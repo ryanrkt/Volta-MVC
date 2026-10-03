@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import volta.exceptions.DuplicateUrlAndMethodException;
+import volta.annotations.RestApi;
 import volta.core.MethodControllerMapping;
 import volta.core.UrlMethodeHttpMapping;
 import volta.enums.MethodHttp;
@@ -52,6 +53,8 @@ public class AnnotationScanner {
                     MethodControllerMapping route = new MethodControllerMapping();
                     route.setClazz(clazz);
                     route.setMethode(method);
+                    
+                    route.setIsApiRest(annotationClass.equals(RestApi.class));
 
                     urlMap.put(key, route);
                 }
