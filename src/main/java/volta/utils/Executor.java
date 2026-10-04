@@ -23,8 +23,8 @@ public class Executor {
                     .getDeclaredConstructor()
                     .newInstance();
             Method methode = method.getMethode();
-
-            Object retour = methode.invoke(controller);
+            Object[] args = ParameterResolver.resolveParameters(methode, request);
+            Object retour = methode.invoke(controller,args);
 
             if (Boolean.TRUE.equals(method.getIsApiRest())) {
                 response.setContentType("application/json;charset=UTF-8");
