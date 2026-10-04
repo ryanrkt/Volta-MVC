@@ -46,7 +46,7 @@ fi
 
 # 4. Compilation
 echo -e "${CYAN}Compilation de tous les fichiers Java trouvés...${NC}"
-javac -cp "$CLASSPATH" -d "$BIN_DIR" $SOURCES_LIST
+javac -parameters -cp "$CLASSPATH" -d "$BIN_DIR" $SOURCES_LIST
 
 # 5. Packaging JAR
 echo -e "${CYAN}Empaquetage de toutes les classes dans le fichier JAR...${NC}"
