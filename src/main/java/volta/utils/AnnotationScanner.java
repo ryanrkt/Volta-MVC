@@ -17,50 +17,54 @@ import volta.enums.MethodHttp;
 public class AnnotationScanner {
 
     public static void getUrlMethodeMappings(
-            Map<UrlMethodeHttpMapping, MethodControllerMapping> urlMap, Class<? extends Annotation> annotationClass)
-            throws Exception {
+        Map<UrlMethodeHttpMapping, MethodControllerMapping> urlMap, Class<? extends Annotation> annotationClass)
+        throws Exception {
 
-        if (urlMap == null || annotationClass == null) {
-            return;
-        }
+    if (urlMap == null || annotationClass == null) {
+        return;
+    }
 
-        Map<Class<?>, List<Method>> methodeMappings = getAnnotatedMethodsPerClass(annotationClass);
+    Map<Class<?>, List<Method>> methodeMappings = getAnnotatedMethodsPerClass(annotationClass);
 
-        if (methodeMappings == null) {
-            return;
-        }
+    if (methodeMappings == null) {
+        return;
+    }
 
-        for (Map.Entry<Class<?>, List<Method>> entry : methodeMappings.entrySet()) {
-            Class<?> clazz = entry.getKey();
-            for (Method method : entry.getValue()) {
-                Annotation annotation = method.getAnnotation(annotationClass);
+    for (Map.Entry<Class<?>, List<Method>> entry : methodeMappings.entrySet()) {
+        Class<?> clazz = entry.getKey();
+        for (Method method : entry.getValue()) {
+            Annotation annotation = method.getAnnotation(annotationClass);
 
-                if (annotation != null) {
-                    String url = (String) annotation.annotationType().getMethod("value").invoke(annotation);
-                    String httpMethodString = (String) annotation.annotationType()
-                            .getMethod("methodHttp").invoke(annotation);
-                    MethodHttp httpMethod = MethodHttp.valueOf(httpMethodString.toUpperCase().trim());
-
-                    UrlMethodeHttpMapping key = new UrlMethodeHttpMapping();
-                    key.setUrl(url);
-                    key.setMethode(httpMethod);
-
-                    if (urlMap.containsKey(key)) {
-                        MethodControllerMapping existingRoute = urlMap.get(key);
-                        throw new DuplicateUrlAndMethodException(key, existingRoute, clazz, method.getName());
-                    }
-
-                    MethodControllerMapping route = new MethodControllerMapping();
-                    route.setClazz(clazz);
-                    route.setMethode(method);
-                    
-                    route.setIsApiRest(annotationClass.equals(RestApi.class));
-
-                    urlMap.put(key, route);
+            if (annotation != null) {
+                String url = (String) annotation.annotationType().getMethod("value").invoke(annotation);
+                
+                Object httpMethodObj = annotation.annotationType().getMethod("methodHttp").invoke(annotation);
+                MethodHttp httpMethod;
+                if (httpMethodObj instanceof MethodHttp) {
+                    httpMethod = (MethodHttp) httpMethodObj;
+                } else {
+                    httpMethod = MethodHttp.valueOf(httpMethodObj.toString().toUpperCase().trim());
                 }
+
+                UrlMethodeHttpMapping key = new UrlMethodeHttpMapping();
+                key.setUrl(url);
+                key.setMethode(httpMethod);
+
+                if (urlMap.containsKey(key)) {
+                    MethodControllerMapping existingRoute = urlMap.get(key);
+                    throw new DuplicateUrlAndMethodException(key, existingRoute, clazz, method.getName());
+                }
+
+                MethodControllerMapping route = new MethodControllerMapping();
+                route.setClazz(clazz);
+                route.setMethode(method);
+                route.setIsApiRest(annotationClass.equals(RestApi.class));
+
+                urlMap.put(key, route);
             }
         }
     }
+}
 
     public static Map<Class<?>, List<Method>> getAnnotatedMethodsPerClass(Class<? extends Annotation> annotationClass)
             throws ClassNotFoundException, IOException {
